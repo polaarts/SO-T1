@@ -2,10 +2,10 @@
 
 En dos terminales separadas:
 
-gcc players.c -o bin/players
-gcc observer.c -o bin/observer
+- Procesos jugadores: gcc players.c -o bin/players
+- Proceso observador: gcc observer.c -o bin/observer
 
 ## Ejecución
 
-./bin/players
-./bin/observer
+- Procesos jugadores: ./bin/players
+- Proceso observador: ./bin/observer
