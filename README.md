@@ -1,11 +1,9 @@
-## Compilación
+### Compilación de procesos:
 
-En dos terminales separadas:
+- Procesos jugadores: `gcc players.c -o bin/players`
+- Proceso observador: `gcc observer.c -o bin/observer`
 
-- Procesos jugadores: gcc players.c -o bin/players
-- Proceso observador: gcc observer.c -o bin/observer
+### Ejecución de los procesos:
 
-## Ejecución
-
-- Procesos jugadores: ./bin/players
-- Proceso observador: ./bin/observer
+- Procesos jugadores: `./bin/players`
+- Proceso observador: `./bin/observer`
