@@ -21,14 +21,9 @@ void generar_votos(int pids[], int size, int votos[]) {
 }
 
 void send_votes(int votes[], int size) {
+    printf("inici SENDDD\n");
     printf("enviando\n");
     int fd;
-
-    // Eliminar el FIFO si ya existe
-    unlink(myfifo);
-
-    // Crear el FIFO
-    mkfifo(myfifo, 0666);
 
     // Abrir el FIFO para escribir
     printf("Abriendo FIFO para escribir\n");
@@ -39,23 +34,22 @@ void send_votes(int votes[], int size) {
     }
     printf("FIFO abierto\n");
 
-    // Escribir los votos en el FIFO
     write(fd, votes, size * sizeof(int));
     printf("fifo escrita\n");
     close(fd);
-}
-
-void sig_terminated(){
-    /*
-    Debe ejecutar la eliminación del respectivo 
-    hijo dado el retorno del observer
-     */
 }
 
 int main(int argc, char *argv[]) {
     int ctd_players = 6;
     int pids[ctd_players];
     int votos[ctd_players];
+
+    // Crear el FIFO antes de forkear
+    unlink(myfifo); // Eliminar si ya existe
+    if (mkfifo(myfifo, 0666) == -1) {
+        perror("mkfifo failed");
+        exit(1);
+    }
 
     // Crear los jugadores
     for (int i = 0; i < ctd_players; i++) {
@@ -82,13 +76,27 @@ int main(int argc, char *argv[]) {
         printf("Proceso hijo %d terminado\n", pids[j]);
     }
 
-    // Iniciar el observador antes de enviar los votos
-    observer();
+    // Crear un proceso hijo para el observer
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork failed");
+        exit(1);
+    } else if (pid == 0) {
+        // Proceso hijo: ejecutar observer()
+        observer();
+        exit(0);
+    } else {
+        // Proceso padre: continuar con la ejecución
+        // Generar y enviar los votos
+        generar_votos(pids, ctd_players, votos);
+        send_votes(votos, ctd_players);
 
-    // Generar y enviar los votos
-    generar_votos(pids, ctd_players, votos);
+        // Esperar a que el observer termine
+        wait(NULL);
 
-    send_votes(votos, ctd_players);
+        // Eliminar el FIFO
+        unlink(myfifo);
+    }
 
     return 0;
 }

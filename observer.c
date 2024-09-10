@@ -14,7 +14,7 @@ int termination(int votes[]){
     Debe retornar el valor del índice del array de PIDs que debe
     ser eliminado.
     */
-    int pid_index_eliminated;
+    int pid_index_eliminated = -1;
 
     // Aquí deberías agregar la lógica para contar los votos y manejar el empate
 
@@ -24,13 +24,7 @@ int termination(int votes[]){
 void receive_votes(int votes[], int size){   
     int fd;
 
-     // Eliminar el FIFO si ya existe
-    unlink(myfifo);
-    
-    // Verificar si ya existe el FIFO
-    if (mkfifo(myfifo, 0666) == -1) {
-        perror("mkfifo failed");
-    }
+    printf("inicio RECEIVEEEE\n");
 
     // Abrir el FIFO para leer
     printf("Abriendo FIFO para leer\n");
@@ -39,6 +33,7 @@ void receive_votes(int votes[], int size){
         perror("open failed");
         exit(1);
     }
+    printf("FIFO abierto para lectura\n");
 
     // Leer los votos
     if (read(fd, votes, size * sizeof(int)) == -1) {
@@ -54,21 +49,19 @@ void receive_votes(int votes[], int size){
     close(fd);
 }
 
-int observer(int argc, char *argv[]){
+void observer(){
     /*
     Acá se debe incluir la lógica de WAIT, EXIT
     para controlar el flujo del juego
     */
-   int votes[4];
+   int votes[6]; // Asegúrate de que el tamaño coincida con ctd_players
 
    printf("OBSERVADOR: %d\n", getpid()); // PID del observador
-   
+    
    // Llamar a receive_votes para recibir los votos
-   receive_votes(votes, 4);  // Asegúrate de pasar el tamaño correcto del array
+   receive_votes(votes, 6);  // Pasa el tamaño correcto del array
 
    // Ahora puedes llamar a la función termination para eliminar un proceso
    int pid_index = termination(votes);
    printf("Eliminando proceso con índice: %d\n", pid_index);
-
-   return 0;
 }
