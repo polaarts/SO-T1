@@ -12,28 +12,38 @@
 #define myfifo "/tmp/myfifo"
 
 void generar_votos(int pids[], int size, int votos[]) {
-    printf("generando");
+    printf("generando\n");
     // Generar votos aleatorios para cada PID
     for (int i = 0; i < size; i++) {
         votos[i] = (rand() % size) + 1;  // Genera un voto entre 1 y el tamaño del array
-        printf("%i", votos[i]);    
+        printf("%i\n", votos[i]);    
     }
 }
 
-
 void send_votes(int votes[], int size) {
-    printf("enviando");
+    printf("enviando\n");
     int fd;
+
+    // Eliminar el FIFO si ya existe
+    unlink(myfifo);
+
+    // Crear el FIFO
     mkfifo(myfifo, 0666);
+
+    // Abrir el FIFO para escribir
+    printf("Abriendo FIFO para escribir\n");
     fd = open(myfifo, O_WRONLY);
+    if (fd == -1) {
+        perror("open failed");
+        exit(1);
+    }
+    printf("FIFO abierto\n");
 
+    // Escribir los votos en el FIFO
     write(fd, votes, size * sizeof(int));
-
+    printf("fifo escrita\n");
     close(fd);
-
-    printf("enviado los votos");
 }
-
 
 void sig_terminated(){
     /*
@@ -42,11 +52,10 @@ void sig_terminated(){
      */
 }
 
-
 int main(int argc, char *argv[]) {
-    int ctd_players = 4;
-    int pids[4];
-    int votos[4];
+    int ctd_players = 6;
+    int pids[ctd_players];
+    int votos[ctd_players];
 
     // Crear los jugadores
     for (int i = 0; i < ctd_players; i++) {
@@ -70,16 +79,16 @@ int main(int argc, char *argv[]) {
     // Imprimir los PIDs de los procesos hijos
     printf("PLAYERS. PIDs de los procesos hijos:\n");
     for (int j = 0; j < ctd_players; j++) {
-        printf("%d\n", pids[j]);
+        printf("Proceso hijo %d terminado\n", pids[j]);
     }
 
-    
+    // Iniciar el observador antes de enviar los votos
+    observer();
+
     // Generar y enviar los votos
     generar_votos(pids, ctd_players, votos);
 
     send_votes(votos, ctd_players);
 
-
-    observer();
     return 0;
 }
