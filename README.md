@@ -4,8 +4,7 @@
 
 ### Ejecución de los procesos:
 
-- Procesos jugadores: `./bin/players`
-- Proceso observador: `./bin/observer`
+`./bin/out`
 
 ### CHECKLIST
 
