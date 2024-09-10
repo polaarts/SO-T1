@@ -32,9 +32,9 @@ int termination(int votes[]){
 void receive_votes(int votes[], int size){   
     int fd;
     mkfifo(myfifo, 0666);
-    fd = open(myfifo, O_WRONLY);
+    fd = open(myfifo, O_RDONLY);
 
-    write(fd, votes, size * sizeof(int));
+    read(fd, votes, size * sizeof(int));
 
     printf("RECIBIDO");
     close(fd);
@@ -43,7 +43,7 @@ void receive_votes(int votes[], int size){
 
 // Mandar signal del pid eliminador
 
-int main(int argc, char *argv[]){
+int observer(int argc, char *argv[]){
     /*
     Acá se debe incluir la lógica que de WAIT, EXIT
     para controlar el flujo del juego

@@ -83,14 +83,13 @@ int main(int argc, char *argv[]) {
         printf("%d\n", pids[j]);
     }
 
-    // for (int i = 0; i < ctd_players; i++) {
-    //     wait(NULL);
-    // }
-
+    
     // Generar y enviar los votos
     generar_votos(pids, ctd_players, votos);
 
     send_votes(votos, ctd_players);
 
+
+    observer();
     return 0;
 }
