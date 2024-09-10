@@ -1,7 +1,6 @@
 ### Compilación de procesos:
 
-- Procesos jugadores: `gcc src/players.c -o bin/players`
-- Proceso observador: `gcc src/observer.c -o bin/observer`
+`gcc src/players.c src/observer.c -o bin/out`
 
 ### Ejecución de los procesos:
 
