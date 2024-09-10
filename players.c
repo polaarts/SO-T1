@@ -11,16 +11,6 @@
 
 #define myfifo "/tmp/myfifo"
 
-void amurrarse(){
-    /*
-    Imprime en pantalla el amurre ANTES de ser eliminado.
-
-    *Deberia recibir la SIGNAL para ejecutarse. Y hacer exec
-    */
-    char message[] = "Estoy amurrado :(";
-
-}
-
 void generar_votos(int pids[], int size, int votos[]) {
     printf("generando");
     // Generar votos aleatorios para cada PID
