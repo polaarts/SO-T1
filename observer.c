@@ -59,7 +59,7 @@ void observer(){
    printf("OBSERVADOR: %d\n", getpid()); // PID del observador
     
    // Llamar a receive_votes para recibir los votos
-   receive_votes(votes, 6);  // Pasa el tamaño correcto del array
+   receive_votes(votes, 10);  // Pasa el tamaño correcto del array
 
    // Ahora puedes llamar a la función termination para eliminar un proceso
    int pid_index = termination(votes);

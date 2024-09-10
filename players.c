@@ -40,7 +40,7 @@ void send_votes(int votes[], int size) {
 }
 
 int main(int argc, char *argv[]) {
-    int ctd_players = 6;
+    int ctd_players = 10;
     int pids[ctd_players];
     int votos[ctd_players];
 
