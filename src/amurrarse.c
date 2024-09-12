@@ -7,12 +7,11 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
-void amurrarse(){
+void main(){
     /*
     Imprime en pantalla el amurre ANTES de ser eliminado.
 
     *Deberia recibir la SIGNAL para ejecutarse. Y hacer exec
     */
-    char message[] = "Estoy amurrado :(";
-
+    printf("Estoy AMURRADOOOOO :(\n");
 }
