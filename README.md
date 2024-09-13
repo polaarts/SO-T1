@@ -1,7 +1,8 @@
 ### Compilación de procesos:
 
-`gcc -o bin/players src/players.c -pthread`
-`gcc -o bin/observer src/observer.c -pthread`
+`gcc -o bin/players src/players.c`
+`gcc -o bin/observer src/observer.c`
+`gcc -o bin/amurrarse src/amurrarse.c`
 
 ### Dar permisos de ejecución al script:
 
