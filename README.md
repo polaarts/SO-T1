@@ -1,8 +1,8 @@
 ### Compilación de procesos:
 
-`gcc -o bin/players src/players.c`
-`gcc -o bin/observer src/observer.c`
-`gcc -o bin/amurrarse src/amurrarse.c`
+- `gcc -o bin/players src/players.c`
+- `gcc -o bin/observer src/observer.c`
+- `gcc -o bin/amurrarse src/amurrarse.c`
 
 ### Dar permisos de ejecución al script:
 
@@ -32,7 +32,7 @@
 - **SÍ** - En cada ronda la duración de la música es aleatoria
   y se maneja con iteraciones o tiempo real.
 
-- **MÁS O MENOS** - Se maneja bien el número de sillas que se reducen
+- **SÍ** - Se maneja bien el número de sillas que se reducen
   en cada ronda.
 
 - **SÍ** - Cuando un jugador es elegido aleatoriamente para
