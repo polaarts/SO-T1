@@ -7,11 +7,12 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
-void main(){
-    /*
-    Imprime en pantalla el amurre ANTES de ser eliminado.
+#include <stdio.h>
+#include <unistd.h>
 
-    *Deberia recibir la SIGNAL para ejecutarse. Y hacer exec
-    */
-    printf("Estoy AMURRADOOOOO :(\n");
+int main() {
+    printf("El jugador del PID %d está amurrado\n", getpid());
+    fflush(stdout); // Asegurar que el mensaje se imprima inmediatamente
+    sleep(1); // Pausa para permitir que el mensaje se muestre antes de que el proceso termine
+    return 0;
 }
