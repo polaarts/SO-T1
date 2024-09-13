@@ -11,15 +11,19 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#include "observer.h"
-
 #define myfifo "/tmp/myfifo"
+
+// Definición de la estructura para memoria compartida
+typedef struct {
+    int player_to_eliminate;
+    int result_ready; // 0: no listo, 1: listo
+} shared_data_t;
 
 // Función que el jugador ejecutará antes de ser eliminado
 void ejecutar_amurrarse() {
-    execl("./bin/amurrarse", "amurrarse", NULL);  // Ejecutar el archivo "amurrarse"
+    execl("./bin/amurrarse", "amurrarse", NULL);
     perror("Error al ejecutar 'amurrarse'");
-    exit(1);  // Si exec falla, el proceso debe terminar
+    exit(1);
 }
 
 // Handler para la señal que indica al jugador que ejecute 'amurrarse'
@@ -31,28 +35,19 @@ void signal_handler(int sig) {
 
 // Mantener al jugador activo hasta recibir la señal para ejecutar 'amurrarse'
 void jugador_activo() {
-    signal(SIGUSR1, signal_handler);  // Registrar el handler para SIGUSR1
+    signal(SIGUSR1, signal_handler);
     while (1) {
-        pause();  // Esperar señal
+        pause();
     }
 }
 
-// Función que elimina al jugador cuyo PID está almacenado en memoria compartida
-void eliminar_jugador(int pids[], int* ctd_players) {
-    key_t key = ftok("shmfile", 65);
-    int shmid = shmget(key, 1024, 0666 | IPC_CREAT);
-    char* str = (char*)shmat(shmid, (void*)0, 0);
-
-    // Convertir la cadena de vuelta a entero (índice del proceso a eliminar)
-    int indice = atoi(str);
-
+// Función que elimina al jugador cuyo índice es pasado como argumento
+void eliminar_jugador(int pids[], int* ctd_players, int indice) {
     printf("Se eliminó el jugador %d\n", pids[indice]);
-
 
     // Verificar que el índice esté dentro de los límites
     if (indice < 0 || indice >= *ctd_players) {
         printf("Error: índice inválido %d para eliminar el proceso.\n", indice);
-        shmdt(str);
         return;
     }
 
@@ -75,57 +70,29 @@ void eliminar_jugador(int pids[], int* ctd_players) {
 
     // Eliminar el PID del array pids y ajustar el array de jugadores
     for (int i = indice; i < *ctd_players - 1; i++) {
-        pids[i] = pids[i + 1];  // Desplazar los elementos hacia la izquierda
+        pids[i] = pids[i + 1];
     }
-    (*ctd_players)--;  // Reducir el número de jugadores
-
-    // Desasociar y eliminar la memoria compartida
-    shmdt(str);
-    shmctl(shmid, IPC_RMID, NULL);  // Eliminar la memoria compartida
+    (*ctd_players)--;
 }
 
 // Función que genera votos aleatorios
 void generar_votos(int pids[], int size, int votos[]) {
     printf("Generando votos\n");
     printf(".................\n");
-    
+
     // Inicializamos los votos a 0
     for (int i = 0; i < size; i++) {
         votos[i] = 0;
     }
-    
+
     // Generar votos en un rango válido
     for (int i = 0; i < size; i++) {
-        votos[i] = (rand() % size) + 1;  // Asegurarse de que los votos estén dentro del rango de jugadores
+        votos[i] = (rand() % size) + 1;
         printf("El jugador %d votó por el jugador nro. %d\n", pids[i], votos[i]);
     }
 
-    // Contar la frecuencia de cada voto
-    int frecuencia[size+1];  // El índice 0 no se usa, por eso size+1
-    for (int i = 0; i <= size; i++) {
-        frecuencia[i] = 0;
-    }
-
-    // Contar cuántos votos recibió cada jugador
-    for (int i = 0; i < size; i++) {
-        frecuencia[votos[i]]++;
-    }
-
-    // Determinar el mayor número de votos
-    int max_votos = 0;
-    int jugador_max_votos = 0;
-    for (int i = 1; i <= size; i++) {
-        if (frecuencia[i] > max_votos) {
-            max_votos = frecuencia[i];
-            jugador_max_votos = i;
-        }
-    }
-
     printf("......\n");
-    // Anunciar el resultado
-    printf("Se votó %d veces por el jugador nro. %d\n", max_votos, jugador_max_votos);
 }
-
 
 // Función que envía los votos a través del FIFO
 void send_votes(int votes[], int size) {
@@ -137,7 +104,18 @@ void send_votes(int votes[], int size) {
         exit(1);
     }
 
-    write(fd, votes, size * sizeof(int));
+    // Escribir el tamaño primero
+    if (write(fd, &size, sizeof(int)) == -1) {
+        perror("write size failed");
+        exit(1);
+    }
+
+    // Escribir los votos
+    if (write(fd, votes, size * sizeof(int)) == -1) {
+        perror("write votes failed");
+        exit(1);
+    }
+
     printf(".................\n");
     printf("¡VOTOS ENVIADOS!\n");
     printf(".................\n");
@@ -147,7 +125,13 @@ void send_votes(int votes[], int size) {
 // Función principal
 int main(int argc, char *argv[]) {
     int ctd_players;
-    
+
+    // Configurar memoria compartida
+    key_t key = ftok("shmfile", 65);
+    int shmid = shmget(key, sizeof(shared_data_t), 0666 | IPC_CREAT);
+    shared_data_t* shared_data = (shared_data_t*)shmat(shmid, NULL, 0);
+    shared_data->result_ready = 0;
+
     // Pedir al usuario el número de jugadores
     printf("Ingresa el número de jugadores: ");
     scanf("%d", &ctd_players);
@@ -157,13 +141,6 @@ int main(int argc, char *argv[]) {
     int *votos = malloc(ctd_players * sizeof(int));
 
     srand(time(NULL));  // Inicializar la semilla aleatoria
-
-    // Eliminar cualquier FIFO previo y crear uno nuevo
-    unlink(myfifo);
-    if (mkfifo(myfifo, 0666) == -1) {
-        perror("mkfifo failed");
-        exit(1);
-    }
 
     // Crear los jugadores
     for (int i = 0; i < ctd_players; i++) {
@@ -190,59 +167,45 @@ int main(int argc, char *argv[]) {
     // Bucle de eliminación hasta que quede solo un jugador
     while (ctd_players > 1) {
         // Generar un tiempo de espera aleatorio entre 1 y 5 segundos antes de votar
-        int tiempo_espera = (rand() % 5) + 1;  // Generar un valor entre 1 y 5
+        int tiempo_espera = (rand() % 5) + 1;
         printf("---------------------------------------------------------------------\n");
         printf("Esperando %d segundos antes de la ronda de votación...\n", tiempo_espera);
         printf("---------------------------------------------------------------------\n");
-        sleep(tiempo_espera);  // Pausa aleatoria antes de la ronda de votación
+        sleep(tiempo_espera);
         printf("\n");
-        // Crear un proceso hijo para el observer
-        // Enviar votos al observer y eliminar jugador
-        pid_t pid_observer = fork();
-        if (pid_observer == -1) {
-            perror("fork failed");
-            exit(1);
-        } else if (pid_observer == 0) {
-            observer(ctd_players);  // Pasar la cantidad de jugadores al observer
-            exit(0);
-        } else {
-            // Generar y enviar los votos después de la pausa
-            generar_votos(pids, ctd_players, votos);
-            send_votes(votos, ctd_players);
 
-            // Esperar a que el observer termine
-            wait(NULL);
+        // Generar y enviar los votos después de la pausa
+        generar_votos(pids, ctd_players, votos);
+        send_votes(votos, ctd_players);
 
-            // Leer el índice del jugador a eliminar desde la memoria compartida
-            key_t key = ftok("shmfile", 65);
-            int shmid = shmget(key, 1024, 0666 | IPC_CREAT);
-            char* str = (char*)shmat(shmid, (void*)0, 0);
-            int jugador_eliminar = atoi(str);
-
-            // Eliminar el jugador basado en el índice recibido
-            eliminar_jugador(pids, &ctd_players);
-
-            // Desasociar y eliminar la memoria compartida
-            shmdt(str);
-            shmctl(shmid, IPC_RMID, NULL);  // Eliminar la memoria compartida
-
-            // Mostrar la lista actualizada de jugadores
-            printf("\n");
-            printf("---------------------------------------------------------------------\n");
-            printf("Lista actualizada de jugadores:\n");
-            printf("................................\n");
-            for (int i = 0; i < ctd_players; i++) {
-                printf("Jugador %d con PID %d\n", i+1, pids[i]);
-            }
+        // Esperar a que el observer procese los votos
+        while (shared_data->result_ready == 0) {
+            usleep(10000); // Espera de 10 ms
         }
 
+        // Leer el índice del jugador a eliminar desde la memoria compartida
+        int jugador_eliminar = shared_data->player_to_eliminate;
+
+        // Restablecer la bandera
+        shared_data->result_ready = 0;
+
+        // Eliminar el jugador basado en el índice recibido
+        eliminar_jugador(pids, &ctd_players, jugador_eliminar - 1);  // Ajuste de índice
+
+        // Mostrar la lista actualizada de jugadores
+        printf("\n");
+        printf("---------------------------------------------------------------------\n");
+        printf("Lista actualizada de jugadores:\n");
+        printf("................................\n");
+        for (int i = 0; i < ctd_players; i++) {
+            printf("Jugador %d con PID %d\n", i+1, pids[i]);
+        }
     }
 
     // Proclamar al ganador
     if (ctd_players == 1) {
         printf("El jugador con PID %d es el ganador!\n", pids[0]);
         printf("---------------------------------------------------------------------\n");
-
 
         // Enviar señal al proceso ganador para que ejecute 'amurrarse'
         printf("Eliminando al jugador ganador (PID %d)...\n", pids[0]);
@@ -269,6 +232,10 @@ int main(int argc, char *argv[]) {
     // Liberar la memoria dinámica
     free(pids);
     free(votos);
+
+    // Desasociar y eliminar la memoria compartida
+    shmdt(shared_data);
+    shmctl(shmid, IPC_RMID, NULL);
 
     return 0;
 }

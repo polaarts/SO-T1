@@ -1,10 +1,15 @@
 ### Compilación de procesos:
 
-`gcc src/players.c src/observer.c -o bin/out`
+`gcc -o bin/players src/players.c -pthread`
+`gcc -o bin/observer src/observer.c -pthread`
+
+### Dar permisos de ejecución al script:
+
+`chmod +x run_game.sh`
 
 ### Ejecución de los procesos:
 
-`./bin/out`
+`./bin/run.sh`
 
 ### CHECKLIST
 
