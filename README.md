@@ -6,7 +6,7 @@
 
 ### Dar permisos de ejecución al script:
 
-`chmod +x run_game.sh`
+`chmod +x run.sh`
 
 ### Ejecución de los procesos:
 
